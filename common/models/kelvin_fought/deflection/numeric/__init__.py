@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from math import *
+from cmath import *
 
 from numpy import inf
 from scipy.integrate import nquad
@@ -9,22 +9,29 @@ def deflection_func(a):
     k = sqrt(a['l'] ** 2 + a['e'] ** 2)
     C = sin(a['e'] * a['a']) * sin(a['l'] * a['b'])
     phi = a['e'] * a['y'] + a['l'] * (a['x'] - a['v'] * a['t'])
-    if a['l'] == 0 and a['e'] != 0:
-        A = a['D'] * a['e'] ** 4 + a['g'] * a['p_w']
-        B = 0
-        return a['b'] * C * (A * cos(phi) - B * sin(phi)) / a['e'] / (A ** 2 + B ** 2)
-    if a['l'] != 0 and a['e'] == 0:
-        A = a['g'] * a['p_w']
-        B = 0
-        return a['a'] * a['b'] * A / (A ** 2 + B ** 2)
-    if a['l'] == 0 and a['e'] == 0:
-        A = a['g'] * a['p_w']
-        B = 0
-        return a['a'] * a['b'] * A / (A ** 2 + B ** 2)
-    A = a['D'] * k ** 4 + a['g'] * a['p_w'] - a['l'] ** 2 * a['v'] ** 2 * (
-        a['h'] * a['p_i'] + a['p_w'] / (k * tanh(a['H'] * k)))
-    B = a['D'] * a['l'] * a['t_f'] * a['v'] * a['e'] ** 4
-    return (A * cos(phi) - B * sin(phi)) * C / a['l'] / a['e'] / (A ** 2 + B ** 2)
+    delta = exp(1j * phi)
+    p = 1j * a['freq']
+    k2 = a['h'] * a['p_i'] + a['p_w'] / (k * tanh(a['H'] * k))
+    n = 1 / k2
+    k1 = a['D'] * a['e'] ** 4 * a['t_f'] + 2 * a['D'] * a['e'] ** 2 * a['l'] ** 2 * a['t_f'] + a['D'] * a['l'] ** 4 * a[
+        't_f'] + 3j * a['h'] * a['l'] * a['p_i'] * a['v'] + 4j * a['l'] * a['p_w'] * a['v'] / (k * tanh(a['H'] * k))
+    l = k1 * n
+    k0 = 2j * a['D'] * a['e'] ** 4 * a['l'] * a['t_f'] * a['v'] + a['D'] * a['e'] ** 4 + 2j * a['D'] * a['e'] ** 2 * a[
+                                                                                                                         'l'] ** 3 * \
+                                                                                         a['t_f'] * a['v'] + 2 * a[
+        'D'] * a['e'] ** 2 * a['l'] ** 2 + 1j * a['D'] * a['l'] ** 5 * a['t_f'] * a['v'] + a['D'] * a['l'] ** 4 + a[
+             'g'] + a['p_w'] - 3 * a['h'] * a['l'] ** 2 * a['p_i'] * a['v'] ** 2 - 3 * a['l'] ** 2 * a['p_w'] * a[
+                                                                                                                    'v'] ** 2 / (
+                                                                                       k * tanh(a['H'] * k))
+    m = k0 * n
+    l_half = l / 2
+    k1 = - l_half + sqrt(l_half ** 2 - m)
+    k2 = - l_half - sqrt(l_half ** 2 - m)
+    w = (p - k2) * exp(k1 * a['t']) + (k1 - p) * exp(k2 * a['t']) + (k2 - k1) * exp(p * a['t'])
+    w *= n
+    w /= (k2 - k1) * (p ** 2 + l * p + m)
+    value = w * delta * C / a['l'] / a['e']
+    return value.real
 
 
 def deflection_state(func, a, xrange, yrange):
@@ -54,5 +61,6 @@ def integrate_for(x, y, func, a):
     a['x'] = x
     a['y'] = y
     a['v'] *= 0.99
+    a['t'] = 4
     print(str(x) + ';' + str(y))
     return x, y, -16 * a['P'] * integrator_adapter(func, a, 0, inf, 0, inf) / (pi * 2) / 10000

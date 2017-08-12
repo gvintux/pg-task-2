@@ -1,10 +1,10 @@
 import argparse
 import sys
 
-import common.models.kelvin_fought.tension.numeric as tennum
 from sympy import pprint, init_printing
 
 import common.models.kelvin_fought.deflection.numeric as defnum
+import common.models.kelvin_fought.tension.numeric as tennum
 from common.models.kelvin_fought.deflection.symbolic import deflection_solve as solve
 from common.values import Values
 
@@ -24,7 +24,7 @@ if len(sys.argv) == 1:
     parser.print_help()
 args = parser.parse_args(sys.argv[1:])
 a = Values()
-a['t'] = 0
+print(a['freq'])
 if args.numeric:
     if args.deflection:
         print('Processing numeric deflection...')
@@ -108,15 +108,15 @@ if args.symbolic:
         print("Deflection formula (common solution):")
         pprint(solve())
         print(cols * '=')
-        print("Deflection formula (lambda = 0):")
-        pprint(solve(lm=0))
-        print(cols * '=')
-        print("Deflection formula (eta = 0):")
-        pprint(solve(eta=0))
-        print(cols * '=')
-        print("Deflection formula (lambda = eta = 0):")
-        pprint(solve(lm=0, eta=0))
-        print(cols * '=')
+        # print("Deflection formula (lambda = 0):")
+        # pprint(solve(lm=0))
+        # print(cols * '=')
+        # print("Deflection formula (eta = 0):")
+        # pprint(solve(eta=0))
+        # print(cols * '=')
+        # print("Deflection formula (lambda = eta = 0):")
+        # pprint(solve(lm=0, eta=0))
+        # print(cols * '=')
         print('Processing symbolic deflection finished')
     if args.tension:
         print('calc symbolic all tension')

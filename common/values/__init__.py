@@ -20,13 +20,15 @@ class Values:
         'e': 0,
         't': 0,
         'v': None,
-        'D': None
+        'D': None,
+        'freq': None
     }
 
     def __init__(self):
         a = self.__a
         a['v'] = sqrt(a['g'] * a['H'])
         a['D'] = a['E'] * a['h'] ** 3 / (12 * (1 - a['mu'] ** 2))
+        a['freq'] = a['g'] * a['H'] * sqrt(a['p_i'] * a['h'] / a['D'])
 
     def __getitem__(self, item):
         return self.__a[item]
@@ -38,6 +40,7 @@ class Values:
         elif key == 'E' or key == 'h' or key == 'mu':
             a[key] = value
             a['D'] = a['E'] * a['h'] ** 3 / (12 * (1 - a['mu'] ** 2))
+            a['freq'] = a['g'] * a['H'] * sqrt(a['p_i'] * a['h'] / a['D'])
         else:
             a[key] = value
 
