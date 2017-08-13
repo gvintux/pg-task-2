@@ -21,7 +21,10 @@ class Values:
         't': 0,
         'v': None,
         'D': None,
-        'freq': None
+        'freq': None,
+        'P_min': 0,
+        'P_max': 400000,
+        'phi': 0
     }
 
     def __init__(self):
