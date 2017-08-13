@@ -25,11 +25,15 @@ def deflection_func(a):
                                                                                        k * tanh(a['H'] * k))
     m = k0 * n
     l_half = l / 2
+    A = a['P_min']
+    B = a['P_max']
     k1 = - l_half + sqrt(l_half ** 2 - m)
     k2 = - l_half - sqrt(l_half ** 2 - m)
-    w = (p - k2) * exp(k1 * a['t']) + (k1 - p) * exp(k2 * a['t']) + (k2 - k1) * exp(p * a['t'])
-    w *= n
-    w /= (k2 - k1) * (p ** 2 + l * p + m)
+    w = (A - B) * exp(1j*(a['freq'] * a['t'] + a['phi'])) / (k1 - p) / (p - k2)
+    w -= exp(k1*a['t']) * (A*k1*exp(1j*a['phi']) - A*k1 + A*p  -B*k1*exp(1j*a['phi']) - B*k1 + B*p) / (k1) / (k1-k2) / (k1 - p)
+    w -= exp(k2*a['t']) * (A*k2*exp(1j*a['phi']) - A*k2 + A*p  -B*k2*exp(1j*a['phi']) - B*k + B*p) / (k2) / (k2-k1) / (k2 - p)
+    w += (A + B) / (k1*k2)
+    w *= n/2
     value = w * delta * C / a['l'] / a['e']
     return value.real
 
@@ -63,4 +67,4 @@ def integrate_for(x, y, func, a):
     a['v'] *= 0.99
     a['t'] = 4
     print(str(x) + ';' + str(y))
-    return x, y, -16 * a['P'] * integrator_adapter(func, a, 0, inf, 0, inf) / (pi * 2) / 10000
+    return x, y, -16 * integrator_adapter(func, a, 0, inf, 0, inf) / (pi * 2) / 1000
