@@ -68,3 +68,4 @@ def integrate_for(x, y, func, a):
     a['t'] = 4
     print(str(x) + ';' + str(y))
     return x, y, -16 * integrator_adapter(func, a, 0, inf, 0, inf) / (pi * 2) / 10000
+
