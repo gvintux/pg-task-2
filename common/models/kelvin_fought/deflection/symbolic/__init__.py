@@ -31,12 +31,12 @@ P = Symbol('P', real=True, nonzero=True)
 k = Symbol('k')
 freq = Symbol('omega', real=True, positive=True)
 tau = Symbol('tau', real=True)
-w1 = Function('w1')(x, y)
-w2 = Function('w2')(t)
+w1 = Function('w')(x, y)
+w2 = Function('w')(t)
 w = w1 + w2
 w = Function('w')(x, y, t)
-Phi1 = Function('Phi1')(x, y, z)
-Phi2 = Function('Phi2')(t)
+Phi1 = Function('Phi')(x, y, z)
+Phi2 = Function('Phi')(t)
 Phi = Phi1 + Phi2
 Phi = Function('Phi')(x, y, z, t)
 
@@ -121,7 +121,7 @@ def deflection_solve(**specs):
     # pprint(iw_line)
     # iw_line = iw_line.subs(w2, w_t * delta).subs(Phi2, Phi_t * delta).doit()
     # print('w2 = w(t)')
-    pprint(iw_line)
+    # pprint(iw_line)
     # iw_line = iw_line.replace(w1, w_le).replace(Phi1, Phi_le).doit()
     # print('w1 = w(l,e)')
     # pprint(iw_line)
@@ -143,20 +143,17 @@ def deflection_solve(**specs):
     pprint(Phi_f_slv)
     w_let_slv = model.subs(Phi, Phi_f_slv).subs(w, w_f).subs(P, P * delta).doit()
     w_let_slv = solve(w_let_slv, w_let)[0].doit()
-    w_f_slv = w_f.subs(w_let, w_let_slv).doit() * delta
+    w_f_slv = w_f.subs(w_let, w_let_slv).doit()
     pprint('w(x, y, t) solution')
     pprint(w_let_slv)
     w0 = Symbol('w_0')
-    w1 = Symbol('w_1')
-    w2 = Symbol('w_2')
-    w_f_slv = w_f_slv.replace(diff(w_let, t), tau * w1).replace(diff(w_let, t, 2), tau ** 2 * w2).replace(w_let,
-                                                                                                          w0).doit()
-
-    w_f_slv = w_f_slv / delta / delta
-    num, den = fraction(w_f_slv)
+    w_f_slv = w_f_slv.replace(diff(w_let, t, 2), tau ** 2 * w0).replace(diff(w_let, t), tau * w0).replace(w_let, w0).doit()
+    w_f_slv = w_f_slv / delta
+    num, den = fraction(solve(w_f_slv, w0)[0])
     K = tanh(H * sqrt(lm ** 2 + eta ** 2)) * sqrt(lm ** 2 + eta ** 2)
-    num = (num / K).simplify()
-    den = (den / K).expand(deep=True).simplify()
+    K_sym = Symbol('K')
+    num = (num / K).simplify().subs(K, K_sym).doit()
+    den = (den / K).expand(deep=True).simplify().subs(K, K_sym).doit()
     print('*' * 80)
     pprint(num.cancel().collect(tau ** 2).collect(tau))
     print('*' * 80)
