@@ -31,14 +31,17 @@ P = Symbol('P', real=True, nonzero=True)
 k = Symbol('k')
 freq = Symbol('omega', real=True, positive=True)
 tau = Symbol('tau', real=True)
-w1 = Function('w')(x, y)
-w2 = Function('w')(t)
-w = w1 + w2
+w_xy = Function('w')(x, y)
+w_t = Function('w')(t)
 w = Function('w')(x, y, t)
-Phi1 = Function('Phi')(x, y, z)
-Phi2 = Function('Phi')(t)
-Phi = Phi1 + Phi2
+Phi_xyz = Function('Phi')(x, y, z)
+Phi_t = Function('Phi')(t)
 Phi = Function('Phi')(x, y, z, t)
+
+w_le = Function('w')(lm, eta)
+Phi_le = Function('Phi')(lm, eta)
+w_let = Function('w')(lm, eta, t)
+Phi_let = Function('Phi')(lm, eta, t)
 
 
 def nabla4(func):
@@ -67,25 +70,21 @@ def deflection_solve(**specs):
     ss = u - v * t
     model = model.subs(x, ss).doit()
     model = model.replace(ss, x).doit()
-    # model = model.subs(w, w1 + w2).subs(Phi, Phi1 + Phi2).doit()
+    # model = model.subs(w, w_xy + w_t).subs(Phi, Phi_xyz + Phi_t).doit()
     # model = model.subs(w2, 0).subs(Phi2, 0).doit()
-    Phi_xyz = Function('Phi')(x, y, z)
-    Phi_t = Function('Phi')(t)
-    w_xy = Function('w')(x, y)
-    w_t = Function('w')(t)
+    # Phi_xyz = Function('Phi')(x, y, z)
+    # Phi_t = Function('Phi')(t)
+    # w_xy = Function('w')(x, y)
+    # w_t = Function('w')(t)
     # model = model.replace(w1, w_xy).replace(Phi1, Phi_xyz).doit()
     # model = model.replace(w2, w_t).replace(Phi2, Phi_t).doit()
     print("Model with x := x - v*t substitution")
     pprint(model)
-    w_le = Function('w')(lm, eta)
-    Phi_le = Function('Phi')(lm, eta)
-    w_let = Function('w')(lm, eta, t)
-    Phi_let = Function('Phi')(lm, eta, t)
 
     # Fourier expressions
-    w_f = w_let * delta
+    w_f = (w_le + w_t) * delta
     k = Symbol('k')
-    Phi_f = (Phi_let * cosh((H + z) * k)) * delta
+    Phi_f = (Phi_le + Phi_t) * cosh((H + z) * k) * delta
     laplace_rule = Eq(diff(Phi_f, x, 2) + diff(Phi_f, y, 2) + diff(Phi_f, z, 2), 0)
     pprint("Laplace rule")
     pprint(laplace_rule)
@@ -101,7 +100,6 @@ def deflection_solve(**specs):
         k_slv = k_slv[0]
     if eta != 0 and lm != 0:
         k_slv = k_slv[2]
-
     Phi_f = Phi_f.subs(k, k_slv).doit()
     # ice-water line z = 0
     iw_line = Eq(diff(w, t).doit(), diff(Phi, z))
@@ -111,46 +109,40 @@ def deflection_solve(**specs):
     iw_line = iw_line.replace(ss, x).doit()
     print('Ice-water border equation with x := x - v*t substitution')
     pprint(iw_line)
-    # iw_line = iw_line.subs(w, w1 + w2).subs(Phi, Phi1 + Phi2).doit()
-    # print('w=w1+w2')
+    # iw_line = iw_line.subs(w, w_xy + w_t).subs(Phi, Phi_xyz + Phi_t).doit()
+    # print('w=w1+w2, Phi = Phi1 + Phi2')
     # pprint(iw_line)
     # iw_line = iw_line.subs(w2, w_t * delta).subs(Phi2, Phi_t * delta).doit()
     # print('w2 = w(t)')
     # pprint(iw_line)
-    # iw_line = iw_line.replace(w1, w_le).replace(Phi1, Phi_le).doit()
+    # iw_line = iw_line.replace(w_xy, w_le).replace(Phi_xyz, Phi_le).doit()
     # print('w1 = w(l,e)')
     # pprint(iw_line)
-    # iw_line_f = iw_line.subs(Phi1, Phi_f).doit().subs(w1, w_f).doit()
+    # iw_line_f = iw_line.subs(Phi_xyz, Phi_f).doit().subs(w_xy, w_f).doit()
     iw_line_f = iw_line.subs(Phi, Phi_f).doit().subs(w, w_f).subs(z, 0).doit()
     print("Ice-water border after subs")
     pprint(iw_line_f)
-    Phi_let_slv = None
-    try:
-        Phi_let_slv = solve(iw_line_f, Phi_let)[0]
-    except TypeError:
-        Phi_let_slv = Number('0')
-    except IndexError:
-        Phi_let_slv = Number('0')
+    Phi_le_slv = solve(iw_line_f, Phi_le)[0]
     pprint('Phi(lambda, eta, t) solution')
-    pprint(Phi_let_slv)
-    Phi_f_slv = Phi_f.subs(Phi_let, Phi_let_slv).doit().subs(z, 0).simplify()
-    pprint('Phi(x, y, z, t) solution')
+    pprint(Phi_le_slv)
+    Phi_f_slv = Phi_f.subs(Phi_le, Phi_le_slv).doit().subs(z, 0).simplify()
+    pprint('Phi(x, y, z) solution')
     pprint(Phi_f_slv)
     model_f = model.subs(Phi, Phi_f_slv).subs(w, w_f).subs(P, P * delta).doit()
-    w_let_slv = solve(model_f, w_let)[0].doit()
-    w_f_slv = w_f.subs(w_let, w_let_slv).doit()
+    w_le_slv = solve(model_f, w_le)[0].doit()
+    w_f_slv = w_f.subs(w_le, w_le_slv).doit()
     K = tanh(H * k_slv) * k_slv
     K_sym = Symbol('K')
     pprint('w(x, y, t) solution')
-    w_let_slv = w_let_slv.subs(K, K_sym).doit().simplify()
-    pprint(w_let_slv)
-    w_lap = Symbol('W')
-    w_let_slv = w_let_slv.subs(diff(w_let, t, 2), tau ** 2 * w_lap).subs(diff(w_let, t), tau * w_lap).subs(w_let,
-                                                                                                           w_lap).doit()
-    w_lap_slv = solve(w_let_slv, w_lap)[0].expand().collect(tau ** 2).collect(tau)
+    w_le_slv = w_le_slv.subs(K, K_sym).doit()
+    pprint(w_le_slv)
+    w_t_lap_img = Symbol('W')
+    w_le_slv_lap = w_le_slv.subs(diff(w_t, t, 2), tau ** 2 * w_t_lap_img).subs(diff(w_t, t), tau * w_t_lap_img).subs(
+        w_t, w_t_lap_img).doit()
+    w_t_lap_slv = solve(w_le_slv_lap, w_t_lap_img)[0].expand().collect(tau ** 2).collect(tau)
     print('w_lap solution')
-    pprint(w_lap_slv)
-    num, den = fraction(w_lap_slv)
+    pprint(w_t_lap_slv)
+    num, den = fraction(w_t_lap_slv)
     num /= K_sym
     den /= K_sym
     P_lap = laplace_transform(P * exp(I * freq * t) * Heaviside(t), t, tau)[0]
@@ -160,13 +152,50 @@ def deflection_solve(**specs):
     den = den.expand().collect(tau ** 2).collect(tau)
     print('denom')
     pprint(den)
-    k1, k2, k3 = symbols('k1 k2 k3')
-    den = den.subs(den.coeff(tau ** 2), k3).subs(den.coeff(tau), k2).doit()
-    den /= k3
+    k0_sym, k1_sym, k2_sym, n_sym = symbols('k0 k1 k2 n', positive=True)
+    k2 = den.coeff(tau ** 2)
+    k1 = den.coeff(tau)
+    k0 = (den - tau * k1 - tau ** 2 * k2).simplify()
+    den = den.subs(k2, k2_sym).subs(k1, k1_sym).subs(k0, k0_sym).doit()
+    k1 = k1.collect(I).collect(K).collect(D * tf)
+    D_tf_coeff = k1.coeff(D * tf)
+    D_tf_coeff = D_tf_coeff.factor()
+    k1 = (k1 - k1.coeff(D * tf) * D * tf) + D_tf_coeff * D * tf
+    k0 = k0.expand().collect(I).collect(D)
+    D_coeff = k0.coeff(D)
+    D_coeff = D_coeff.factor()
+    k0 = (k0 - k0.coeff(D) * D) + D_coeff * D
+    I_coeff = k0.coeff(I)
+    I_coeff = (I_coeff.collect(D * tf)).factor()
+    k0 = (k0 - k0.coeff(I) * I) + I_coeff * I
+    n = 1 / k2
+    print('k0')
+    pprint(k0)
+    print('k1')
+    pprint(k1)
+    print('k2')
+    pprint(k2)
+    # pprint(k1)
+
+    k0 = (den - tau * k1 - tau ** 2 * k2).simplify()
+    den /= k2_sym
     l, m = symbols('l m', positive=True)
+    den = den.expand().subs(k1_sym / k2_sym, l).subs(k0_sym / k2_sym, m).doit()
+    num *= n_sym
+    print('numer after coeff subs')
+    pprint(num)
     print('denom after coeff subs')
-    den = den.expand().subs(k2 / k3, l).subs(k1 / k3, m).doit().simplify()
     pprint(den)
-    w_lap_slv = inverse_laplace_transform(num / den, tau, t)
-    pprint(w_lap_slv.simplify(ratio=oo))
-    return w_lap_slv.simplify(ratio=oo)
+    den_root_1, den_root_2 = solve(den, tau)
+    r1, r2 = symbols('r1 r2', positive=True)
+    den = (tau - r1) * (tau - r2)
+    w_t_slv = inverse_laplace_transform(num / den, tau, t)
+    p = I * freq
+    p_sym = Symbol('p', positive=True)
+    w_t_slv = w_t_slv.subs(p, p_sym).doit().combsimp()
+    w_t_slv = w_t_slv.rewrite(exp).factor().simplify().subs(p, p_sym).doit()
+    pprint(w_t_slv)
+    w_le_slv = w_le_slv.subs(diff(w_t, t), 0).subs(w_t, w_t_slv).doit()
+    pprint(w_le_slv.simplify(ratio=oo))
+    exit(0)
+    # return w_t_slv.simplify(ratio=oo)
