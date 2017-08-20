@@ -42,6 +42,11 @@ w_le = Function('w')(lm, eta)
 Phi_le = Function('Phi')(lm, eta)
 w_let = Function('w')(lm, eta, t)
 Phi_let = Function('Phi')(lm, eta, t)
+phi = Symbol('phi', positive=True)
+Pmax = Symbol('P_max', positive=True)
+Pmin = Symbol('P_min', positive=True)
+Pmin = 0
+# phi = 0
 
 
 def nabla4(func):
@@ -145,7 +150,8 @@ def deflection_solve(**specs):
     num, den = fraction(w_t_lap_slv)
     num /= K_sym
     den /= K_sym
-    P_lap = laplace_transform(P * exp(I * freq * t) * Heaviside(t), t, tau)[0]
+    phi_sym = Symbol('phi', positive=True)
+    P_lap = laplace_transform(((exp(I * (freq * t))* Heaviside(t) * phi_sym + 1) * (Pmax - Pmin) / 2 + Pmin), t, tau)[0]
     num = num.subs(P, P_lap).doit()
     print('P laplace')
     pprint(num)
@@ -197,7 +203,15 @@ def deflection_solve(**specs):
     p = I * freq
     p_sym = Symbol('p', positive=True)
     w_t_slv = w_t_slv.subs(p, p_sym).doit().combsimp()
-    w_t_slv = w_t_slv.rewrite(exp).factor().simplify().subs(p, p_sym).doit()
+    w_t_slv = w_t_slv.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    w_t_slv_num, w_t_slv_den = fraction(w_t_slv)
+    w_t_slv_num = (w_t_slv_num / n_sym)
+    print('W0')
+    pprint((w_t_slv_num / w_t_slv_den).simplify(ratio=oo))
+    print('W1')
+    pprint((diff(w_t_slv_num, t, 1) / w_t_slv_den).simplify(ratio=oo))
+    print('W2')
+    pprint((diff(w_t_slv_num, t, 2) / w_t_slv_den).simplify(ratio=oo))
     pprint(w_t_slv)
     # w_le_slv = w_le_slv.subs(diff(w_t, t), 0).subs(w_t, w_t_slv).doit()
     dw_t = diff(w_t_slv, t).doit()
