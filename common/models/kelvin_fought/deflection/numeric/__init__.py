@@ -12,21 +12,11 @@ def deflection_func(a):
     phi = a['e'] * a['y'] + a['l'] * (a['x'] - a['v'] * a['t'])
     delta = exp(1j * phi)
     p = 1j * a['freq']
-
     K = k * tanh(a['H'] * k)
 
-    k0 = 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 2 * k ** 2) + a['D'] * k ** 4 * a['g'] * a['p_w'] - 4 * \
-                                                                                                                   a[
-                                                                                                                       'l'] ** 2 * \
-                                                                                                                   a[
-                                                                                                                       'v'] ** 2 * (
-                                                                                                                   a[
-                                                                                                                       'h'] *
-                                                                                                                   a[
-                                                                                                                       'p_i'] +
-                                                                                                                   a[
-                                                                                                                       'p_w'] / K)
-    k1 = a['D'] * a['t_f'] * k ** 2 + 4j * a['l'] * a['v'] * (a['h'] * a['p_i'] + a['p_w'] / K)
+    k0 = 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4) + a['D'] * k ** 4 + a['g'] * a['p_w'] - 4 \
+                                                        * a['l'] ** 2 * a['v'] ** 2 * (a['h'] * a['p_i'] + a['p_w'] / K)
+    k1 = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * (a['h'] * a['p_i'] + a['p_w'] / K)
     k2 = a['h'] * a['p_i'] + a['p_w'] / K
 
     n = 1 / k2
@@ -51,14 +41,14 @@ def deflection_func(a):
     w2 = r1 ** 2 * e_r1_t * (p - r2) + r2 ** 2 * e_r2_t * (r1 - p) + p ** 2 * e_p_t * (r2 - r1)
     w2 /= w_i_den
 
-    denom = a['D'] * a['t_f'] * k ** 4 + a['g'] * a['p_w'] - 4 * a['l'] ** 2 * a['e'] ** 2 * (
+    denom = a['D'] * k ** 4 + a['g'] * a['p_w'] - 4 * a['l'] ** 2 * a['v'] ** 2 * (
         a['h'] * a['p_i'] + a['p_w'] / K) + 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4)
 
-    w1_c = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * (a['h'] ** a['p_i'] + a['p_w'] / K)
+    w1_c = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * (a['h'] * a['p_i'] + a['p_w'] / K)
     w2_c = a['h'] * a['p_i'] + a['p_w'] / K
-    w = 1 + w0 + (w1_c * w1 + w2_c * w2) / denom
+    w = w0 + (1 + w1_c * w1 + w2_c * w2) / denom
     w *= n
-    value = w * delta * C / a['l'] / a['e']
+    value = -w * delta * C / a['l'] / a['e']
     return value.real
 
 
@@ -88,7 +78,9 @@ def integrator_adapter(func, args, inner_l, inner_u, outer_l, outer_u):
 def integrate_for(x, y, func, a):
     a['x'] = x
     a['y'] = y
-    a['v'] *= 0.99
-    a['t'] = 0
+    a['v'] = 0
+    a['freq'] = 0.064516129 * 2
+    print(1/a['freq'])
+    a['t'] = 45.7/2
     print(str(x) + ';' + str(y))
     return x, y, -4 * a['P'] * integrator_adapter(func, a, 0, inf, 0, inf) / (pi ** 2) / 1000

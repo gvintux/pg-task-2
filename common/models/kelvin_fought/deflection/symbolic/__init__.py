@@ -228,7 +228,7 @@ def deflection_solve(**specs):
             lm ** 2 * v ** 2))
     print('W2_coeff')
     pprint(w2_coeff.factor(deep=True).collect(I).collect(D))
-    print('denom')
+    print('w_le denom')
     pprint(
         w_le_den.factor(deep=True).collect(I).collect(D).collect(K_sym).collect(tf).collect(lm ** 2 * v ** 2))
     exit(0)
