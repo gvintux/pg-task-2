@@ -31,15 +31,22 @@ def deflection_func(a):
     e_r2_t = exp(r2 * a['t'])
     e_p_t = exp(p * a['t'])
 
-    w_i_den = (p - r1) * (p - r2) * (r1 - r2)
-    w0 = e_r1_t * (p - r2) + e_r2_t * (r1 - p) + e_p_t * (r2 - r1)
+    w_i_den = 2 * (p - r1) * (p - r2) * (r1 - r2)
+    # w0 = e_r1_t * (p - r2) + e_r2_t * (r1 - p) + e_p_t * (r2 - r1)
+    s = r1*r2*e_p_t*(r2-r1) + (r2-r1) * (p*(p-r1-r2) + r1*r2)
+    w0 = e_r1_t * p * r2 * (2*r1 - p + r2) + e_r2_t * p*r1 * (p- r1 - 2*r2) + r1*r2*e_p_t*(r2-r1) + s
     w0 /= w_i_den
 
-    w1 = r1 * e_r1_t * (p - r2) + r2 * e_r2_t * (r1 - p) + p * e_p_t * (r2 - r1)
+    # w1 = r1 * e_r1_t * (p - r2) + r2 * e_r2_t * (r1 - p) + p * e_p_t * (r2 - r1)
+    w1 = e_r1_t * p * r2 * (2*r1 - p + r2) + e_r2_t * p*r1 * (p- r1 - 2*r2) + r1*r2*e_p_t*(r2-r1)
+    w1 *= p*r1 *r2
+    w1 += s
     w1 /= w_i_den
 
-    w2 = r1 ** 2 * e_r1_t * (p - r2) + r2 ** 2 * e_r2_t * (r1 - p) + p ** 2 * e_p_t * (r2 - r1)
-    w2 /= w_i_den
+    # w2 = r1 ** 2 * e_r1_t * (p - r2) + r2 ** 2 * e_r2_t * (r1 - p) + p ** 2 * e_p_t * (r2 - r1)
+    w2 = e_r1_t * r1 * (2*r1 - p + r2) + e_r2_t * r2 * (p- r1 - 2*r2) + p*e_p_t*(r2-r1)
+    w2 *= p * r1 * r2
+    w2 /= -w_i_den
 
     denom = a['D'] * k ** 4 + a['g'] * a['p_w'] - 4 * a['l'] ** 2 * a['v'] ** 2 * (
         a['h'] * a['p_i'] + a['p_w'] / K) + 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4)

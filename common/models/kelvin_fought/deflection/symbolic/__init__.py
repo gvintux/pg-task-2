@@ -46,7 +46,7 @@ phi = Symbol('phi', positive=True)
 Pmax = Symbol('P_max', positive=True)
 Pmin = Symbol('P_min', positive=True)
 Pmin = 0
-# phi = 0
+phi = 0
 
 
 def nabla4(func):
@@ -151,7 +151,7 @@ def deflection_solve(**specs):
     num /= K_sym
     den /= K_sym
     phi_sym = Symbol('phi', positive=True)
-    P_lap = laplace_transform(((exp(I * (freq * t))* Heaviside(t) * phi_sym + 1) * (Pmax - Pmin) / 2 + Pmin), t, tau)[0]
+    P_lap = laplace_transform(((exp(I * (freq * t)) * Heaviside(t) + 1) * (Pmax - Pmin) / 2 + Pmin), t, tau)[0]
     num = num.subs(P, P_lap).doit()
     print('P laplace')
     pprint(num)
