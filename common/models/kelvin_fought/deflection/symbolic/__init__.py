@@ -47,6 +47,7 @@ Pmax = Symbol('P_max', positive=True)
 Pmin = Symbol('P_min', positive=True)
 Pmin = 0
 phi = 0
+p = freq * I
 
 
 def nabla4(func):
@@ -151,8 +152,10 @@ def deflection_solve(**specs):
     num /= K_sym
     den /= K_sym
     phi_sym = Symbol('phi', positive=True)
-    P_lap = laplace_transform(((exp(I * (freq * t)) * Heaviside(t) + 1) * (Pmax - Pmin) / 2 + Pmin), t, tau)[0]
-    num = num.subs(P, P_lap).doit()
+    # *(Pmax - Pmin) / 2 + Pmin
+    P_lap = laplace_transform((exp(I * (freq * t)) * Heaviside(t) + 1), t, tau)[0]
+    num = num.subs(P, P_lap.expand()).doit()
+    num_a, num_b = num.args[0].simplify(), num.args[1].simplify()
     print('P laplace')
     pprint(num)
     den = den.expand().collect(tau ** 2).collect(tau)
@@ -199,15 +202,27 @@ def deflection_solve(**specs):
 
     r1, r2 = symbols('r1 r2', positive=True)
     den = (tau - r1) * (tau - r2)
-    w_t_slv = inverse_laplace_transform(num / den, tau, t)
+    num /= den
+    w_t_slv_a = inverse_laplace_transform(num_a / den, tau, t)
+    w_t_slv_b = inverse_laplace_transform(num_b / den, tau, t)
     p = I * freq
     p_sym = Symbol('p', positive=True)
-    w_t_slv = w_t_slv.subs(p, p_sym).doit().combsimp()
-    w_t_slv = w_t_slv.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    w_t_slv_a = w_t_slv_a.subs(p, p_sym).doit().combsimp()
+    w_t_slv_b = w_t_slv_b.subs(p, p_sym).doit().combsimp()
+    w_t_slv_a = w_t_slv_a.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    w_t_slv_b = w_t_slv_b.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    pprint('w_t_slv_a')
+    pprint(w_t_slv_a.collect([exp(r1*t), exp(r2*t), exp(p_sym*t)]))
+    pprint('w_t_slv_b')
+    pprint(w_t_slv_b.collect([exp(r1*t), exp(r2*t), exp(p_sym*t), p_sym, r1, r2]))
+    w_t_slv = w_t_slv_a + w_t_slv_b
     w_t_slv_num, w_t_slv_den = fraction(w_t_slv)
-    w_t_slv_num = (w_t_slv_num / n_sym)
+    w_t_slv_num = (w_t_slv_num * n_sym * Pmax/2).collect(
+        [exp(r1 * t), exp(r2 * t), exp(p_sym * t), p_sym, r1, r2, (r1 - r2)])
+    pprint(w_t_slv_num)
+    # exit(0)
     print('W0')
-    pprint((w_t_slv_num / w_t_slv_den).simplify(ratio=oo))
+    pprint((w_t_slv_num / w_t_slv_den).simplify())
     print('W1')
     pprint((diff(w_t_slv_num, t, 1) / w_t_slv_den).simplify(ratio=oo))
     print('W2')
