@@ -21,20 +21,21 @@ def deflection_func(a):
 
     n = 1 / k2
     l = k1 / k2
-    m = k0 / k2
-    l_half = l / 2
-    D = sqrt(l_half ** 2 - m)
-    r1 = -l_half - D
-    r2 = -l_half + D
-    if r1*r2 == 0:
-        print([l_half, D])
+    r = -l
+    # m = k0 / k2
+    # l_half = l / 2
+    # D = sqrt(l_half ** 2 - m)
+    # r1 = -l_half - D
+    # r2 = -l_half + D
+    # if r1*r2 == 0:
+    #     print([l_half, D])
 
-    e_r1_t = exp(r1 * a['t'])
-    e_r2_t = exp(r2 * a['t'])
+    e_r_t = exp(r * a['t'])
+    # e_r2_t = exp(r2 * a['t'])
     e_p_t = exp(p * a['t'])
 
-    w_i_den = (p - r1) * (p - r2) * (r1 - r2)
-    w0 = e_r1_t * (p - r2) + e_r2_t * (r1 - p) + e_p_t * (r2 - r1)
+    w0 = (r*a['t'] - 1+exp(-r*a['t']))
+    w0 /= ()
     # s = r1*r2*e_p_t*(r2-r1) + (r2-r1) * (p*(p-r1-r2) + r1*r2)
     # w0 = e_r1_t * p * r2 * (2*r1 - p + r2) + e_r2_t * p*r1 * (p- r1 - 2*r2) + r1*r2*e_p_t*(r2-r1) + s
     w0 /= w_i_den
