@@ -45,9 +45,9 @@ Phi_let = Function('Phi')(lm, eta, t)
 phi = Symbol('phi', positive=True)
 Pmax = Symbol('P_max', positive=True)
 Pmin = Symbol('P_min', positive=True)
-Pmin = 0
-phi = 0
-p = freq * I
+# Pmin = 0
+# phi = 0
+# p = freq * I
 
 
 def nabla4(func):
@@ -91,6 +91,7 @@ def deflection_solve(**specs):
     w_f = (w_le + w_t) * delta
     k = Symbol('k')
     Phi_f = (Phi_le + Phi_t) * cosh((H + z) * k) * delta
+    # Phi_f = Phi_f.subs(Phi_t, 0).doit()
     laplace_rule = Eq(diff(Phi_f, x, 2) + diff(Phi_f, y, 2) + diff(Phi_f, z, 2), 0)
     pprint("Laplace rule")
     pprint(laplace_rule)
@@ -107,6 +108,8 @@ def deflection_solve(**specs):
     if eta != 0 and lm != 0:
         k_slv = k_slv[2]
     Phi_f = Phi_f.subs(k, k_slv).doit()
+    K = tanh(H * k_slv) * k_slv
+    K_sym = Symbol('K')
     # ice-water line z = 0
     iw_line = Eq(diff(w, t).doit(), diff(Phi, z))
     print('Ice-water border equation')
@@ -126,26 +129,25 @@ def deflection_solve(**specs):
     # pprint(iw_line)
     # iw_line_f = iw_line.subs(Phi_xyz, Phi_f).doit().subs(w_xy, w_f).doit()
     iw_line_f = iw_line.subs(Phi, Phi_f).doit().subs(w, w_f).subs(z, 0).doit()
-    print("Ice-water border after subs")
+    print("Ice-water Fourier")
     pprint(iw_line_f)
     Phi_le_slv = solve(iw_line_f, Phi_le)[0]
-    pprint('Phi(lambda, eta, t) solution')
+    pprint('Phi(lambda, eta) solution')
     pprint(Phi_le_slv)
     Phi_f_slv = Phi_f.subs(Phi_le, Phi_le_slv).doit().subs(z, 0).simplify()
     pprint('Phi(x, y, z) solution')
     pprint(Phi_f_slv)
     model_f = model.subs(Phi, Phi_f_slv).subs(w, w_f).subs(P, P * delta).doit()
     w_le_slv = solve(model_f, w_le)[0].doit()
-    w_f_slv = w_f.subs(w_le, w_le_slv).doit()
-    K = tanh(H * k_slv) * k_slv
-    K_sym = Symbol('K')
-    pprint('w(x, y, t) solution')
     w_le_slv = w_le_slv.rewrite(tanh).simplify(ratio=oo).subs(K, K_sym).doit()
-    pprint(w_le_slv)
+    w_f_slv = w_f.subs(w_le, w_le_slv).doit()
+    pprint('w(x, y, t) solution')
+    pprint(w_f_slv)
+    # exit(0)
     w_t_lap_img = Symbol('W')
-    w_le_slv_lap = w_le_slv.subs(diff(w_t, t, 2), tau ** 2 * w_t_lap_img).subs(diff(w_t, t), tau * w_t_lap_img).subs(
+    w_f_slv_lap = w_f_slv.subs(diff(w_t, t, 2), tau ** 2 * w_t_lap_img).subs(diff(w_t, t), tau * w_t_lap_img).subs(
         w_t, w_t_lap_img).doit()
-    w_t_lap_slv = solve(w_le_slv_lap, w_t_lap_img)[0].expand().collect(tau ** 2).collect(tau)
+    w_t_lap_slv = solve(w_f_slv_lap, w_t_lap_img)[0].expand().collect(tau ** 2).collect(tau)
     print('w_lap solution')
     pprint(w_t_lap_slv)
     num, den = fraction(w_t_lap_slv)
@@ -153,7 +155,7 @@ def deflection_solve(**specs):
     den /= K_sym
     phi_sym = Symbol('phi', positive=True)
     # *(Pmax - Pmin) / 2 + Pmin
-    P_lap = laplace_transform((exp(I * (freq * t)) * Heaviside(t) + 1), t, tau)[0]
+    P_lap = laplace_transform((exp(I * (freq * t)) * Heaviside(t)*(Pmax - Pmin) / 2 + Pmin + 1), t, tau)[0]
     num = num.subs(P, P_lap.expand()).doit()
     num_a, num_b = num.args[0].simplify(), num.args[1].simplify()
     print('P laplace')
@@ -200,22 +202,32 @@ def deflection_solve(**specs):
     pprint(den_root_1)
     pprint(den_root_2)
 
-    r1, r2 = symbols('r1 r2', positive=True)
-    den = (tau - r1) * (tau - r2)
-    num /= den
-    w_t_slv_a = inverse_laplace_transform(num_a / den, tau, t)
-    w_t_slv_b = inverse_laplace_transform(num_b / den, tau, t)
-    p = I * freq
+    r1, r2, r = symbols('r1 r2 r', positive=True)
+    den = tau * (tau + r)
     p_sym = Symbol('p', positive=True)
-    w_t_slv_a = w_t_slv_a.subs(p, p_sym).doit().combsimp()
-    w_t_slv_b = w_t_slv_b.subs(p, p_sym).doit().combsimp()
-    w_t_slv_a = w_t_slv_a.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
-    w_t_slv_b = w_t_slv_b.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    p = I * freq
+
+    num = (num).subs(p, p_sym).doit()
+    num_a, num_b = num.factor(deep=True).expand().args[0].factor(deep=True).collect([tau ** 2, tau]), num.factor(deep=True).expand().args[1].factor(deep=True).collect([tau ** 2, tau])
+    print('P Laplace')
+
+    pprint(num_a.subs(p, p_sym).doit())
+    w_t_slv_a = inverse_laplace_transform(num_a/den, tau, t)
+    pprint(fraction(w_t_slv_a)[0].expand(deep=True).cancel().factor(deep=True))
+    w_t_slv_b = inverse_laplace_transform(num_b/den, tau, t)
+    pprint(fraction(w_t_slv_b)[0].expand(deep=True).cancel().factor(deep=True))
+    # pprint()
+    # exit(0)
+    # w_t_slv_b = 0
+    # w_t_slv_a = w_t_slv_a.subs(p, p_sym).doit().combsimp()
+    # w_t_slv_b = w_t_slv_b.subs(p, p_sym).doit().combsimp()
+    # w_t_slv_a = w_t_slv_a.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
+    # w_t_slv_b = w_t_slv_b.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
     pprint('w_t_slv_a')
-    pprint(w_t_slv_a.collect([exp(r1*t), exp(r2*t), exp(p_sym*t)]))
+    pprint(w_t_slv_a.collect([exp(r*t), exp(p_sym*t)]))
     pprint('w_t_slv_b')
-    pprint(w_t_slv_b.collect([exp(r1*t), exp(r2*t), exp(p_sym*t), p_sym, r1, r2]))
-    w_t_slv = w_t_slv_a + w_t_slv_b
+    pprint(w_t_slv_b.collect([exp(r*t), exp(p_sym*t)]))
+    w_t_slv = (w_t_slv_a + w_t_slv_b)
     w_t_slv_num, w_t_slv_den = fraction(w_t_slv)
     w_t_slv_num = (w_t_slv_num * n_sym * Pmax/2).collect(
         [exp(r1 * t), exp(r2 * t), exp(p_sym * t), p_sym, r1, r2, (r1 - r2)])
