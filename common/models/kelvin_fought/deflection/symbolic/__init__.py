@@ -63,6 +63,7 @@ def fourier_integral(func, dlt):
 
 
 def deflection_solve(**specs):
+    init_printing(num_columns=120)
     if 'lm' in specs:
         global lm
         lm = 0

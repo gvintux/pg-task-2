@@ -1,6 +1,5 @@
 import multiprocessing as mp
 from cmath import *
-from math import exp as rexp
 
 from numpy import inf
 from scipy.integrate import nquad
@@ -13,52 +12,41 @@ def deflection_func(a):
     delta = exp(1j * phi)
     p = 1j * a['freq']
     K = k * tanh(a['H'] * k)
-
-    k0 = 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4) + a['D'] * k ** 4 + a['g'] * a['p_w'] - 4 \
-                                                        * a['l'] ** 2 * a['v'] ** 2 * (a['h'] * a['p_i'] + a['p_w'] / K)
-    k1 = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * (a['h'] * a['p_i'] + a['p_w'] / K)
     k2 = a['h'] * a['p_i'] + a['p_w'] / K
+    k1 = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * k2
 
     n = 1 / k2
     l = k1 / k2
-    r = -l
-    # m = k0 / k2
-    # l_half = l / 2
-    # D = sqrt(l_half ** 2 - m)
-    # r1 = -l_half - D
-    # r2 = -l_half + D
-    # if r1*r2 == 0:
-    #     print([l_half, D])
-
-    e_r_t = exp(r * a['t'])
-    # e_r2_t = exp(r2 * a['t'])
+    e_r_t = exp(-l * a['t'])
     e_p_t = exp(p * a['t'])
 
-    w0 = (r*a['t'] - 1+exp(-r*a['t']))
-    w0 /= ()
-    # s = r1*r2*e_p_t*(r2-r1) + (r2-r1) * (p*(p-r1-r2) + r1*r2)
-    # w0 = e_r1_t * p * r2 * (2*r1 - p + r2) + e_r2_t * p*r1 * (p- r1 - 2*r2) + r1*r2*e_p_t*(r2-r1) + s
-    w0 /= w_i_den
+    w0_a = l * (e_p_t - 1) + p * (e_r_t - 1)
+    w0_a /= l * p * (l + p)
+    w0_b = (l ** 2 * p * a['t'] + l ** 2 - l ** 2 * e_p_t + l ** 2 * p - p ** 2 + p * e_r_t)
+    w0_b /= 2 * l ** 2 * p * (l + p)
+    w0 = w0_a + w0_b
 
-    w1 = r1 * e_r1_t * (p - r2) + r2 * e_r2_t * (r1 - p) + p * e_p_t * (r2 - r1)
-    # w1 = e_r1_t * p * r2 * (2*r1 - p + r2) + e_r2_t * p*r1 * (p- r1 - 2*r2) + r1*r2*e_p_t*(r2-r1)
-    # w1 *= p*r1 *r2
-    # w1 += s
-    w1 /= w_i_den
+    w1_a = (e_p_t - e_r_t)
+    w1_a /= l + p
 
-    w2 = r1 ** 2 * e_r1_t * (p - r2) + r2 ** 2 * e_r2_t * (r1 - p) + p ** 2 * e_p_t * (r2 - r1)
-    # w2 = e_r1_t * r1 * (2*r1 - p + r2) + e_r2_t * r2 * (p- r1 - 2*r2) + p*e_p_t*(r2-r1)
-    # w2 *= p * r1 * r2
-    w2 /= -w_i_den
+    w1_b = (l - l * e_p_t + p - p * e_r_t)
+    w1_b /= 2 * l * (l + p)
+    w1 = w1_a + w1_b
 
-    denom = a['D'] * k ** 4 + a['g'] * a['p_w'] - 4 * a['l'] ** 2 * a['v'] ** 2 * (
-        a['h'] * a['p_i'] + a['p_w'] / K) + 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4)
+    w2_a = (l * e_r_t + p * e_p_t)
+    w2_a /= l + p
 
-    w1_c = a['D'] * a['t_f'] * k ** 4 + 4j * a['l'] * a['v'] * (a['h'] * a['p_i'] + a['p_w'] / K)
-    w2_c = a['h'] * a['p_i'] + a['p_w'] / K
-    w = w0 + (1 + w1_c * w1 + w2_c * w2) / denom
-    w *= n
-    value = -w * delta * C / a['l'] / a['e']
+    w2_b = p * (e_r_t - e_p_t)
+    w2_b /= 2 * (l + p)
+
+    w2 = w2_a + w2_b
+
+    denom = - a['D'] * k ** 4 - a['g'] * a['p_w'] + 4 * a['l'] ** 2 * a['v'] ** 2 * (
+        k2) - 1j * a['D'] * a['t_f'] * a['l'] * a['v'] * (a['e'] ** 4 + k ** 4)
+
+    w = (1 + k1 * w1 + k2 * w2) / denom
+    w *= -n * a['P_max']
+    value = w * delta * C / a['l'] / a['e']
     return value.real
 
 
@@ -89,6 +77,6 @@ def integrate_for(x, y, func, a):
     a['x'] = x
     a['y'] = y
     a['v'] = 0
-    a['t'] = 45.7/2
+    a['t'] = 0
     print(str(x) + ';' + str(y))
-    return x, y, -4 * a['P'] * integrator_adapter(func, a, 0, inf, 0, inf) / (pi ** 2) / 1000
+    return x, y, -4 * integrator_adapter(func, a, 0, inf, 0, inf) / (pi ** 2) / 1000
