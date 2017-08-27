@@ -139,8 +139,8 @@ def deflection_solve(**specs):
     # phi_sym = Symbol('phi', positive=True)
     # phase = Symbol('phi0', positive=True)
     phase = 1
-    P = exp(I * (freq * t)) * phase * Heaviside(t) + 1
-    P *= (Pmax - Pmin) / 2
+    P = exp(I * freq * t) * phase * Heaviside(t) + 1
+    # P *= (Pmax - Pmin) / 2
     P += Pmin
     pprint(P)
     P_tau = laplace_transform(P, t, tau)[0]
@@ -231,116 +231,3 @@ def deflection_solve(**specs):
     print('w_f_slv_den')
     pprint(w_f_slv_den)
     exit(0)
-
-    num_a, num_b = num.args[0].simplify(), num.args[1].simplify()
-    print('P laplace')
-    pprint(num)
-    print('denom')
-    pprint(den)
-    den = den.subs(k2, k2_sym).subs(k1, k1_sym).subs(k0, k0_sym).doit()
-    k1 = k1.collect(I).collect(K).collect(D * tf)
-    D_tf_coeff = k1.coeff(D * tf)
-    D_tf_coeff = D_tf_coeff.factor()
-    k1 = (k1 - k1.coeff(D * tf) * D * tf) + D_tf_coeff * D * tf
-    k0 = k0.expand().collect(I).collect(D)
-    D_coeff = k0.coeff(D)
-    D_coeff = D_coeff.factor()
-    k0 = (k0 - k0.coeff(D) * D) + D_coeff * D
-    I_coeff = k0.coeff(I)
-    I_coeff = (I_coeff.collect(D * tf)).factor()
-    k0 = (k0 - k0.coeff(I) * I) + I_coeff * I
-    n = 1 / k2
-    print('k0')
-    pprint(k0)
-    print('k1')
-    pprint(k1)
-    print('k2')
-    pprint(k2)
-    # pprint(k1)
-
-    k0 = (den - tau * k1 - tau ** 2 * k2).simplify()
-    den /= k2_sym
-    l, m = symbols('l m', positive=True)
-    den = den.expand().subs(k1_sym / k2_sym, l).subs(k0_sym / k2_sym, m).subs(p, p_sym).doit()
-    num *= n_sym
-    print('numer after coeff subs')
-    pprint(num)
-    print('denom after coeff subs')
-    pprint(den)
-    den_root_1, den_root_2 = solve(den, tau)
-    pprint('den roots')
-    pprint(den_root_1)
-    pprint(den_root_2)
-
-    r1, r2, r = symbols('r1 r2 r', positive=True)
-    den = tau * (tau + r)
-    num = num.subs(p, p_sym).doit()
-    num_a, num_b = num.factor(deep=True).expand().args[0].factor(deep=True).collect([tau ** 2, tau]),
-    num.factor(deep=True).expand().args[1].factor(deep=True).collect([tau ** 2, tau])
-    print('P Laplace')
-
-    w_t_slv_a = inverse_laplace_transform(num_a / den, tau, t)
-    pprint(fraction(w_t_slv_a)[0].expand(deep=True).cancel().factor(deep=True))
-    w_t_slv_b = inverse_laplace_transform(num_b / den, tau, t)
-    pprint(fraction(w_t_slv_b)[0].expand(deep=True).cancel().factor(deep=True))
-    # pprint()
-    # exit(0)
-    # w_t_slv_b = 0
-    # w_t_slv_a = w_t_slv_a.subs(p, p_sym).doit().combsimp()
-    # w_t_slv_b = w_t_slv_b.subs(p, p_sym).doit().combsimp()
-    # w_t_slv_a = w_t_slv_a.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
-    # w_t_slv_b = w_t_slv_b.rewrite(exp).factor().simplify().subs(p, p_sym).collect(Pmax).collect(Pmin).doit()
-    pprint('w_t_slv_a')
-    pprint(w_t_slv_a.collect([exp(r * t), exp(p_sym * t)]))
-    pprint('w_t_slv_b')
-    pprint(w_t_slv_b.collect([exp(r * t), exp(p_sym * t)]))
-    w_t_slv = (w_t_slv_a + w_t_slv_b) / den
-    w_t_slv_num, w_t_slv_den = fraction(w_t_slv)
-    w_t_slv_num = (w_t_slv_num).collect(
-        [exp(r * t), exp(p_sym * t), p_sym, r, (r - p)])
-    pprint(w_t_slv_num)
-    # exit(0)
-    print('W0')
-    pprint((w_t_slv_num / w_t_slv_den).simplify())
-    print('W1')
-    pprint((diff(w_t_slv_num, t, 1) / w_t_slv_den).simplify(ratio=oo))
-    print('W2')
-    pprint((diff(w_t_slv_num, t, 2) / w_t_slv_den).simplify(ratio=oo))
-    pprint(w_t_slv)
-    # w_le_slv = w_le_slv.subs(diff(w_t, t), 0).subs(w_t, w_t_slv).doit()
-    dw_t = diff(w_t_slv, t).doit()
-    print('diff w_t, t')
-    pprint(dw_t)
-    d2w_t2 = diff(w_t_slv, t, 2).doit()
-    print('diff w_t, t, 2')
-    pprint(d2w_t2)
-    w_t_sym = Symbol('W0')
-    dw_t_sym = Symbol('W1')
-    d2w_t2_sym = Symbol('W2')
-    w_le_slv = w_le_slv.subs(diff(w_t, t, 2), d2w_t2_sym).doit().subs(diff(w_t, t), dw_t_sym).subs(w_t, w_t_sym).doit()
-    w_le_slv = w_le_slv.cancel().simplify(ratio=oo).collect(w_t_sym).collect(dw_t_sym).collect(d2w_t2_sym)
-    print('w_le after W_i subs')
-    pprint(w_le_slv)
-    w_le_num, w_le_den = fraction(w_le_slv)
-    w_le_num = ((w_le_num / K_sym).expand(deep=True).cancel().collect([w_t_sym, dw_t_sym, d2w_t2_sym]))
-    w_le_den = ((w_le_den / K_sym).expand(deep=True).cancel())
-
-    w0_coeff = w_le_num.coeff(w_t_sym)
-    w1_coeff = w_le_num.coeff(dw_t_sym)
-    w2_coeff = w_le_num.coeff(d2w_t2_sym)
-    w_le_num_remain = (w_le_num - w0_coeff * w_t_sym - w1_coeff * dw_t_sym - w2_coeff * d2w_t2_sym).simplify()
-    pprint('num_remain')
-    pprint(w_le_num_remain)
-    print('W0_coeff / w_le_den')
-    pprint((w0_coeff.factor(deep=True) / w_le_den).cancel())
-    print('W1_coeff')
-    pprint(
-        w1_coeff.factor(deep=True).collect(I).collect(D).collect(tf).collect(K_sym).collect(tf).collect(
-            lm ** 2 * v ** 2))
-    print('W2_coeff')
-    pprint(w2_coeff.factor(deep=True).collect(I).collect(D))
-    print('w_le denom')
-    pprint(
-        w_le_den.factor(deep=True).collect(I).collect(D).collect(K_sym).collect(tf).collect(lm ** 2 * v ** 2))
-    exit(0)
-    # return w_t_slv.simplify(ratio=oo)
