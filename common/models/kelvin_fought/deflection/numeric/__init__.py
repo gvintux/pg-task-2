@@ -84,9 +84,6 @@ def integrate_for(x, y, func, a):
     a['x'] = x
     a['y'] = y
     a['v'] *= 0.99
-    # a['v'] = 0
     T = 1 / a['freq'] * 2 * pi
-    # a['t'] = T - 1 / a['freq']
-    a['t'] = 1 / a['freq'] / 2
     print(str(x) + ';' + str(y))
     return x, y, -4 * integrator_adapter(func, a, 0, inf, 0, inf) / (pi ** 2) / 1000
