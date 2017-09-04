@@ -1,3 +1,4 @@
+from common.models.kelvin_fought.deflection.symbolic
 from sympy import *
 from sympy import pi as PI
 
@@ -230,26 +231,4 @@ def deflection_solve(**specs):
 
     print('w_f_slv_den')
     pprint(w_f_slv_den)
-
-    w_num = (1 + k1 * (dw_t_a + dw_t_b) + k2 * (d2w_t2_a + d2w_t2_b)) * delta
-    dw_x = diff(w_num, x)
-    d2w_x = diff(dw_x, x)
-    dw_y = diff(w_num, y)
-    d2w_y = diff(dw_y, y)
-    d2w_xy = diff(dw_x, y)
-    d2w_x_t = diff(d2w_x, t)
-    d2w_y_t = diff(d2w_y, t)
-    d2w_xy_t = diff(d2w_xy, t)
-    print('d2w_x:')
-    pprint(d2w_x)
-    print('d2w_y:')
-    pprint(d2w_y)
-    print('d2w_xy:')
-    pprint(d2w_xy)
-    print('d2w_x_t:')
-    pprint(d2w_x_t)
-    print('d2w_y_t:')
-    pprint(d2w_xy_t)
-    print('d2w_xy_t:')
-    pprint(d2w_xy_t)
     exit(0)
