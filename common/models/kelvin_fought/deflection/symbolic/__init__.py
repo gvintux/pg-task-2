@@ -231,7 +231,7 @@ def deflection_solve(**specs):
     print('w_f_slv_den')
     pprint(w_f_slv_den)
 
-    w_num = (1 + k1_sym * (dw_t_a + dw_t_b) + k2_sym * (d2w_t2_a + d2w_t2_b)) * delta
+    w_num = (1 + k1_sym * Function('W1')(t) + k2_sym * Function('W2')(t)) * delta
     dw_t = diff(w_num, t)
     dw_x = diff(w_num, x)
     d2w_x = diff(dw_x, x, 2)
@@ -255,4 +255,5 @@ def deflection_solve(**specs):
     pprint(d2w_xy_t.collect(delta).collect([k1_sym,k2_sym]))
     print('d2w_xy_t:')
     pprint(d2w_xy_t.collect(delta).collect([k1_sym,k2_sym]))
+    # pprint(diff(d))
     exit(0)
